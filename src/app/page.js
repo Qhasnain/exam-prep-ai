@@ -8,11 +8,30 @@ export default function Home() {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [fileName, setFileName] = useState("");
-  const [fileBase64, setFileBase64] = useState("");
-  const [mimeType, setMimeType] = useState("");
   
+  // Handle multiple files
+  const [files, setFiles] = useState([]);
+  
+  // Answer length selection
+  const [answerLength, setAnswerLength] = useState("medium"); // small, medium, large
+
   const [printData, setPrintData] = useState({ query: "", answer: "" });
+  const [theme, setTheme] = useState("dark");
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme");
+    if (savedTheme) {
+      setTheme(savedTheme);
+      document.documentElement.setAttribute("data-theme", savedTheme);
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const newTheme = theme === "dark" ? "light" : "dark";
+    setTheme(newTheme);
+    localStorage.setItem("theme", newTheme);
+    document.documentElement.setAttribute("data-theme", newTheme);
+  };
 
   useEffect(() => {
     const handlePaste = (e) => {
@@ -22,16 +41,17 @@ export default function Home() {
           if (items[i].type.indexOf("image") !== -1) {
             const file = items[i].getAsFile();
             if (file) {
-              setFileName("Pasted Image (" + file.type.split('/')[1] + ")");
-              setMimeType(file.type);
               const reader = new FileReader();
               reader.onloadend = () => {
                 const base64String = reader.result.split(',')[1];
-                setFileBase64(base64String);
+                setFiles(prev => [...prev, {
+                  name: "Pasted Image (" + file.type.split('/')[1] + ")",
+                  base64: base64String,
+                  mimeType: file.type,
+                  id: Date.now() + Math.random() // unique id for key
+                }]);
               };
               reader.readAsDataURL(file);
-              // We do NOT call preventDefault() here because the user might be pasting text into the input box
-              break;
             }
           }
         }
@@ -44,7 +64,7 @@ export default function Home() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!query.trim() && !fileBase64) return;
+    if (!query.trim() && files.length === 0) return;
 
     setLoading(true);
     setError("");
@@ -59,9 +79,9 @@ export default function Home() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ 
-          prompt: query || "Please explain this image.",
-          fileData: fileBase64 || null,
-          mimeType: mimeType || null
+          prompt: query || "Please explain the attached document(s)/image(s).",
+          filesData: files,
+          answerLength: answerLength
         }),
       });
 
@@ -71,18 +91,18 @@ export default function Home() {
         throw new Error(data.error || "Failed to generate answer");
       }
 
+      const fileNames = files.map(f => f.name).join(", ");
+      
       const newItem = {
         id: Date.now(),
-        query: query || "Image Analysis Request",
+        query: query || "Analysis Request",
         answer: data.answer,
-        attachedFile: fileName
+        attachedFiles: fileNames
       };
 
       setHistory((prev) => [...prev, newItem]);
       setQuery("");
-      setFileName("");
-      setFileBase64("");
-      setMimeType("");
+      setFiles([]);
       
       if (wantsPdf) {
         setTimeout(() => {
@@ -98,21 +118,26 @@ export default function Home() {
   };
 
   const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setFileName(file.name);
-      setMimeType(file.type);
+    const selectedFiles = Array.from(e.target.files);
+    selectedFiles.forEach(file => {
       const reader = new FileReader();
       reader.onloadend = () => {
         const base64String = reader.result.split(',')[1];
-        setFileBase64(base64String);
+        setFiles(prev => [...prev, {
+          name: file.name,
+          base64: base64String,
+          mimeType: file.type,
+          id: Date.now() + Math.random()
+        }]);
       };
       reader.readAsDataURL(file);
-    } else {
-      setFileName("");
-      setFileBase64("");
-      setMimeType("");
-    }
+    });
+    // Reset file input so the same file(s) can be selected again if needed
+    e.target.value = null;
+  };
+
+  const removeFile = (idToRemove) => {
+    setFiles(prev => prev.filter(f => f.id !== idToRemove));
   };
 
   const downloadPDF = (itemQuery, itemAnswer) => {
@@ -147,11 +172,35 @@ export default function Home() {
 
   return (
     <div className="container">
-      <header className="header">
+      <header className="header" style={{ position: 'relative' }}>
+        <button 
+          onClick={toggleTheme} 
+          style={{ 
+            position: 'absolute', 
+            top: '0', 
+            right: '0', 
+            background: 'var(--bg-tertiary)', 
+            border: '1px solid var(--border-color)', 
+            color: 'var(--text-primary)', 
+            padding: '0.5rem', 
+            borderRadius: '50%', 
+            cursor: 'pointer',
+            width: '40px',
+            height: '40px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '1.2rem',
+            transition: 'all 0.3s ease'
+          }}
+          title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+        >
+          {theme === "dark" ? "☀️" : "🌙"}
+        </button>
         <h1>AI Exam Helper</h1>
         <p>Your ultimate university study companion. Ask any question and get a simplified, exam-ready answer perfect for assignments and tests.</p>
         <div className="designer-badge">
-          <span className="badge-text">Specially Designed by <strong>Hasnain</strong>, LJCCA Student</span>
+          <span className="badge-text">Specially Designed by <strong>Hasnain Qureshi</strong>, LJCCA Student</span>
         </div>
       </header>
 
@@ -161,8 +210,8 @@ export default function Home() {
           <div key={item.id} className="results-container" style={{ animation: 'fadeIn 0.5s ease' }}>
             <div style={{ background: 'rgba(59, 130, 246, 0.1)', padding: '1rem', borderRadius: '0.5rem', marginBottom: '1.5rem', borderLeft: '4px solid #3b82f6' }}>
               <p style={{ margin: 0, fontWeight: 'bold', color: '#f8fafc' }}>{item.query}</p>
-              {item.attachedFile && (
-                <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.85rem', color: '#93c5fd' }}>📎 Attached: {item.attachedFile}</p>
+              {item.attachedFiles && (
+                <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.85rem', color: '#93c5fd' }}>📎 Attached: {item.attachedFiles}</p>
               )}
             </div>
             
@@ -199,33 +248,80 @@ export default function Home() {
 
       {/* INPUT AREA */}
       <div className="search-container" style={{ position: 'sticky', bottom: '2rem', zIndex: 10 }}>
-        <form onSubmit={handleSubmit} className="search-form">
-          <input
-            type="text"
-            className="search-input"
-            placeholder="Ask a new question (e.g., Explain the OSI model...)"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            disabled={loading}
-          />
-          <button type="submit" className="search-button" disabled={loading || (!query.trim() && !fileBase64)}>
-            {loading ? "Thinking..." : "Send Request"}
-          </button>
+        
+        {/* Selected Files Display */}
+        {files.length > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1rem' }}>
+            {files.map(file => (
+              <div key={file.id} style={{ display: 'flex', alignItems: 'center', background: 'rgba(59, 130, 246, 0.2)', padding: '0.3rem 0.6rem', borderRadius: '0.5rem', border: '1px solid #3b82f6', fontSize: '0.85rem', color: '#e0f2fe' }}>
+                <span style={{ maxWidth: '150px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{file.name}</span>
+                <button 
+                  onClick={() => removeFile(file.id)}
+                  style={{ marginLeft: '0.5rem', background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontWeight: 'bold' }}
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="search-form" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div className="search-input-wrapper">
+            <input
+              type="text"
+              className="search-input"
+              placeholder="Ask a new question (e.g., Explain the OSI model...)"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              disabled={loading}
+              style={{ flex: 1 }}
+            />
+            <button type="submit" className="search-button" disabled={loading || (!query.trim() && files.length === 0)}>
+              {loading ? "Thinking..." : "Send Request"}
+            </button>
+          </div>
+          
+          <div className="controls-wrapper">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <label className="upload-label" style={{ cursor: 'pointer', color: 'var(--accent-primary)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--bg-tertiary)', padding: '0.5rem 1rem', borderRadius: '0.5rem', border: '1px solid var(--border-color)', transition: 'background 0.2s' }}>
+                <span>📄 Upload Notes or 🖼️ Images</span>
+                <input type="file" multiple accept=".pdf,.txt,.png,.jpg,.jpeg" onChange={handleFileChange} style={{ display: 'none' }} disabled={loading} />
+              </label>
+            </div>
+            
+            <div className="length-select-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--bg-tertiary)', padding: '0.5rem 0.8rem', borderRadius: '0.75rem', border: '1px solid var(--border-color)' }}>
+              <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: '500' }}>Answer Length:</span>
+              <select 
+                value={answerLength} 
+                onChange={(e) => setAnswerLength(e.target.value)}
+                disabled={loading}
+                style={{ 
+                  background: 'var(--bg-secondary)', 
+                  color: 'var(--text-primary)', 
+                  border: '1px solid var(--border-color)', 
+                  borderRadius: '0.5rem', 
+                  padding: '0.4rem 0.8rem', 
+                  fontSize: '0.9rem', 
+                  outline: 'none',
+                  cursor: 'pointer',
+                  fontWeight: '500'
+                }}
+              >
+                <option value="small" style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', padding: '0.5rem' }}>Small (2 marks)</option>
+                <option value="medium" style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', padding: '0.5rem' }}>Medium (5 marks)</option>
+                <option value="large" style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', padding: '0.5rem' }}>Large (10 marks)</option>
+              </select>
+            </div>
+          </div>
         </form>
-        <div style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <label style={{ cursor: 'pointer', color: '#93c5fd', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(59, 130, 246, 0.1)', padding: '0.5rem 1rem', borderRadius: '0.5rem', border: '1px solid rgba(59, 130, 246, 0.3)', transition: 'background 0.2s' }}>
-            <span>📄 Upload Notes or 🖼️ Image</span>
-            <input type="file" accept=".pdf,.txt,.png,.jpg,.jpeg" onChange={handleFileChange} style={{ display: 'none' }} disabled={loading} />
-          </label>
-          {fileName && <span style={{ fontSize: '0.85rem', color: '#cbd5e1' }}>Attached: {fileName}</span>}
-        </div>
       </div>
 
       {/* Hidden container specifically styled for PDF export */}
       <div id="print-container" style={{ display: 'none', background: 'white', color: 'black', padding: '40px', fontFamily: 'Arial, sans-serif' }}>
         <div style={{ textAlign: 'center', borderBottom: '2px solid #3b82f6', paddingBottom: '20px', marginBottom: '30px' }}>
           <h1 style={{ color: '#1e3a8a', margin: '0 0 10px 0', fontSize: '28px' }}>AI Exam Helper Notes</h1>
-          <p style={{ color: '#64748b', margin: 0, fontSize: '14px' }}>Specially Designed by <strong>Hasnain</strong>, LJCCA Student</p>
+          <p style={{ color: '#64748b', margin: 0, fontSize: '14px' }}>Specially Designed by <strong>Hasnain Qureshi</strong>, LJCCA Student</p>
         </div>
         <div style={{ background: '#f8fafc', padding: '15px', borderRadius: '8px', borderLeft: '4px solid #3b82f6', marginBottom: '30px' }}>
           <strong style={{ color: '#334155' }}>Question:</strong> {printData.query}

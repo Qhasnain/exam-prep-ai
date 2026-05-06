@@ -1,19 +1,39 @@
 :root {
   --bg-primary: #0f172a;
   --bg-secondary: #1e293b;
+  --bg-tertiary: rgba(15, 23, 42, 0.6);
   --text-primary: #f8fafc;
   --text-secondary: #94a3b8;
+  --text-muted: #cbd5e1;
   --accent-primary: #3b82f6;
   --accent-hover: #2563eb;
   --border-color: #334155;
   --card-bg: rgba(30, 41, 59, 0.7);
+  --input-bg: rgba(15, 23, 42, 0.6);
   --font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  --bg-gradient: radial-gradient(circle at top right, rgba(59, 130, 246, 0.1), transparent 400px), radial-gradient(circle at bottom left, rgba(147, 51, 234, 0.1), transparent 400px);
+}
+
+[data-theme="light"] {
+  --bg-primary: #f8fafc;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f1f5f9;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #334155;
+  --accent-primary: #2563eb;
+  --accent-hover: #1d4ed8;
+  --border-color: #e2e8f0;
+  --card-bg: rgba(255, 255, 255, 0.85);
+  --input-bg: rgba(241, 245, 249, 0.8);
+  --bg-gradient: radial-gradient(circle at top right, rgba(37, 99, 235, 0.05), transparent 400px), radial-gradient(circle at bottom left, rgba(147, 51, 234, 0.05), transparent 400px);
 }
 
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 body {
@@ -23,8 +43,7 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background-image: radial-gradient(circle at top right, rgba(59, 130, 246, 0.1), transparent 400px),
-                    radial-gradient(circle at bottom left, rgba(147, 51, 234, 0.1), transparent 400px);
+  background-image: var(--bg-gradient);
 }
 
 .container {
@@ -80,7 +99,7 @@ body {
 
 .search-input {
   flex: 1;
-  background: rgba(15, 23, 42, 0.6);
+  background: var(--input-bg);
   border: 1px solid var(--border-color);
   padding: 1rem 1.2rem;
   border-radius: 0.75rem;
@@ -142,7 +161,7 @@ body {
 .results-container h1, 
 .results-container h2, 
 .results-container h3 {
-  color: #e2e8f0;
+  color: var(--text-primary);
   margin-top: 1.5rem;
   margin-bottom: 0.75rem;
 }
@@ -153,14 +172,14 @@ body {
 
 .results-container p {
   margin-bottom: 1rem;
-  color: #cbd5e1;
+  color: var(--text-muted);
 }
 
 .results-container ul, 
 .results-container ol {
   margin-bottom: 1rem;
   padding-left: 1.5rem;
-  color: #cbd5e1;
+  color: var(--text-muted);
 }
 
 .results-container li {
@@ -168,25 +187,26 @@ body {
 }
 
 .results-container strong {
-  color: #f8fafc;
+  color: var(--text-primary);
   font-weight: 600;
 }
 
 .results-container pre {
-  background: #0f172a;
+  background: var(--bg-primary);
   padding: 1rem;
   border-radius: 0.5rem;
   overflow-x: auto;
   margin-bottom: 1rem;
-  border: 1px solid #334155;
+  border: 1px solid var(--border-color);
 }
 
 .results-container code {
   font-family: var(--font-mono, monospace);
-  background: #1e293b;
+  background: var(--bg-secondary);
   padding: 0.2rem 0.4rem;
   border-radius: 0.25rem;
   font-size: 0.9em;
+  color: var(--text-primary);
 }
 
 .results-container pre code {
@@ -245,12 +265,12 @@ body {
 
 .badge-text {
   font-size: 0.9rem;
-  color: #93c5fd;
+  color: var(--accent-primary);
   letter-spacing: 0.05em;
 }
 
 .badge-text strong {
-  color: #bfdbfe;
+  color: var(--text-primary);
   font-weight: 700;
 }
 
@@ -261,4 +281,74 @@ body {
   border-top: 1px solid var(--border-color);
   color: var(--text-secondary);
   font-size: 0.875rem;
+  padding-bottom: 2rem;
+}
+
+/* Default layout wrappers */
+.search-input-wrapper {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.controls-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+/* Responsive adjustments for mobile devices */
+@media (max-width: 768px) {
+  .container {
+    padding: 1.25rem 1rem;
+  }
+  
+  .header h1 {
+    font-size: 2.2rem;
+  }
+  
+  .header p {
+    font-size: 1rem;
+  }
+  
+  .search-container {
+    padding: 1.25rem;
+    border-radius: 0.75rem;
+  }
+  
+  .search-input-wrapper {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .search-input {
+    width: 100%;
+  }
+  
+  .search-button {
+    width: 100%;
+    padding: 0.8rem;
+  }
+  
+  .controls-wrapper {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+  
+  .upload-label, .length-select-wrapper {
+    justify-content: center;
+    width: 100%;
+  }
+  
+  .results-container {
+    padding: 1.25rem;
+    border-radius: 0.75rem;
+  }
+  
+  .results-container h1 { font-size: 1.5rem; }
+  .results-container h2 { font-size: 1.25rem; }
+  .results-container h3 { font-size: 1.1rem; }
 }

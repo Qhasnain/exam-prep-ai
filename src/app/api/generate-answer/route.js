@@ -2,11 +2,11 @@ import { GoogleGenAI } from "@google/genai";
 
 export async function POST(req) {
   try {
-    const { prompt, fileData, mimeType } = await req.json();
+    const { prompt, filesData, answerLength } = await req.json();
 
-    if (!prompt) {
+    if (!prompt && (!filesData || filesData.length === 0)) {
       return Response.json(
-        { error: "Prompt is required" },
+        { error: "Prompt or file(s) are required" },
         { status: 400 }
       );
     }
@@ -25,20 +25,47 @@ Use a structured, highly readable format:
 - Conclude with a brief 'Exam Takeaway' or summary.
 Provide your response strictly in Markdown format.`;
 
-    if (fileData) {
-      if (mimeType.startsWith('image/')) {
-        systemPrompt += `\n\nIMPORTANT: The student has attached an image (e.g., a screenshot of a question or diagram). Please carefully analyze the image and provide a highly accurate, exam-friendly answer or explanation for whatever is shown in the image.`;
-      } else {
+    // Adjust prompt based on requested length/marks
+    if (answerLength === "small") {
+      systemPrompt += `\n\nCRITICAL REQUIREMENT: The user has requested a SMALL answer (approx. 2 marks). Keep your response extremely concise, focusing only on the core definitions, main facts, or direct answer. Do not provide long explanations or extensive examples. 1-2 brief paragraphs or a few bullet points is ideal.`;
+    } else if (answerLength === "large") {
+      systemPrompt += `\n\nCRITICAL REQUIREMENT: The user has requested a LARGE answer (approx. 10 marks). Provide a highly detailed, comprehensive response. Break down the topic into logical sections, provide in-depth explanations, use multiple examples or analogies, and ensure the answer is long enough to fetch maximum marks in a university exam. Include introductions, advantages, disadvantages, applications, and a strong conclusion where applicable.`;
+    } else {
+      // medium / default
+      systemPrompt += `\n\nCRITICAL REQUIREMENT: The user has requested a MEDIUM answer (approx. 5 marks). Provide a standard, well-rounded answer with sufficient explanation, key points, and perhaps one solid example. Ensure it covers all necessary points without being overly verbose.`;
+    }
+
+    if (filesData && filesData.length > 0) {
+      const hasImages = filesData.some(f => f.mimeType.startsWith('image/'));
+      const hasDocs = filesData.some(f => !f.mimeType.startsWith('image/'));
+      
+      if (hasImages && !hasDocs) {
+        systemPrompt += `\n\nIMPORTANT: The student has attached image(s) (e.g., screenshots of questions or diagrams). Please carefully analyze the image(s) and provide a highly accurate, exam-friendly answer or explanation for whatever is shown in the image(s).`;
+      } else if (!hasImages && hasDocs) {
         systemPrompt += `\n\nIMPORTANT: The student has provided their official subject notes. You MUST base your answer STRICTLY on the concepts, definitions, and facts found in these provided notes. If the answer cannot be found in the notes, say so. Do not invent information outside the scope of the notes.`;
+      } else {
+         systemPrompt += `\n\nIMPORTANT: The student has attached both images and text notes. Please carefully analyze all provided materials to formulate your answer. Base your factual responses strictly on the provided notes where applicable.`;
       }
     }
 
     const fullPrompt = `${systemPrompt}\n\nStudent's Question: ${prompt}\n\nProfessor's Answer:`;
 
-    const apiContents = fileData && mimeType ? [
-      { inlineData: { data: fileData, mimeType: mimeType } },
-      fullPrompt
-    ] : fullPrompt;
+    let apiContents = [];
+    
+    if (filesData && filesData.length > 0) {
+      // Add each file as an inline data object
+      filesData.forEach(file => {
+        apiContents.push({
+          inlineData: {
+            data: file.base64,
+            mimeType: file.mimeType
+          }
+        });
+      });
+    }
+    
+    // Add the text prompt at the end
+    apiContents.push(fullPrompt);
 
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
@@ -47,7 +74,17 @@ Provide your response strictly in Markdown format.`;
 
     return Response.json({ answer: response.text });
   } catch (error) {
-    console.error("API Error:", error);
+    const errorString = error?.message || String(error);
+    console.error("API Error:", errorString);
+    
+    // Check if it's a rate limit error
+    if (errorString.includes("429") || errorString.includes("quota") || errorString.includes("RESOURCE_EXHAUSTED")) {
+      return Response.json(
+        { error: "Google Gemini API Quota Exceeded. You have reached the maximum free tier limit of 20 requests per day for gemini-2.5-flash. Please try again tomorrow, or use a different API key." },
+        { status: 429 }
+      );
+    }
+    
     return Response.json(
       { error: "Failed to generate answer. Please check your API key or try again later." },
       { status: 500 }
