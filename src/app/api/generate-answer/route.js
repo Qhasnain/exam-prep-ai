@@ -80,13 +80,13 @@ Provide your response strictly in Markdown format.`;
     // Check if it's a rate limit error
     if (errorString.includes("429") || errorString.includes("quota") || errorString.includes("RESOURCE_EXHAUSTED")) {
       return Response.json(
-        { error: "Google Gemini API Quota Exceeded. You have reached the maximum free tier limit of 20 requests per day for gemini-2.5-flash. Please try again tomorrow, or use a different API key." },
+        { error: "Google Gemini API Quota Exceeded. You have reached the maximum free tier limit of 20 requests per day for gemini-2.5-flash. Please try again tomorrow, or use a different API key. [Debug: " + errorString + "]" },
         { status: 429 }
       );
     }
     
     return Response.json(
-      { error: "Failed to generate answer. Please check your API key or try again later." },
+      { error: "Failed to generate answer. Please check your API key or try again later. [Debug: " + errorString + "]" },
       { status: 500 }
     );
   }
