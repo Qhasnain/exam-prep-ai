@@ -33,6 +33,96 @@ export default function Home() {
     document.documentElement.setAttribute("data-theme", newTheme);
   };
 
+  const processAndAddFile = (file, customName) => {
+    if (file.type.startsWith("image/")) {
+      const img = document.createElement("img");
+      const url = URL.createObjectURL(file);
+      
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        const canvas = document.createElement("canvas");
+        const MAX_WIDTH = 1200;
+        const MAX_HEIGHT = 1200;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+        const base64String = dataUrl.split(",")[1];
+        
+        setFiles(prev => [...prev, {
+          name: customName || file.name,
+          base64: base64String,
+          mimeType: "image/jpeg",
+          id: Date.now() + Math.random()
+        }]);
+      };
+      img.src = url;
+    } else if (file.type === "application/pdf") {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        try {
+          // Dynamically import pdfjs-dist to avoid SSR issues
+          const pdfjsLib = await import("pdfjs-dist");
+          pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+          
+          const arrayBuffer = reader.result;
+          const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) });
+          const pdf = await loadingTask.promise;
+          
+          let extractedText = "";
+          const maxPages = Math.min(pdf.numPages, 50); // limit to 50 pages to prevent massive payloads
+          
+          for (let i = 1; i <= maxPages; i++) {
+            const page = await pdf.getPage(i);
+            const textContent = await page.getTextContent();
+            const pageText = textContent.items.map(item => item.str).join(" ");
+            extractedText += `--- Page ${i} ---\n${pageText}\n\n`;
+          }
+          
+          setFiles(prev => [...prev, {
+            name: customName || file.name,
+            extractedText: extractedText,
+            mimeType: file.type,
+            id: Date.now() + Math.random()
+          }]);
+        } catch (error) {
+          console.error("Error parsing PDF locally:", error);
+          alert("Could not extract text from PDF. It might be corrupted or protected.");
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    } else {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result.split(',')[1];
+        setFiles(prev => [...prev, {
+          name: customName || file.name,
+          base64: base64String,
+          mimeType: file.type,
+          id: Date.now() + Math.random()
+        }]);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   useEffect(() => {
     const handlePaste = (e) => {
       if (e.clipboardData && e.clipboardData.items) {
@@ -41,17 +131,7 @@ export default function Home() {
           if (items[i].type.indexOf("image") !== -1) {
             const file = items[i].getAsFile();
             if (file) {
-              const reader = new FileReader();
-              reader.onloadend = () => {
-                const base64String = reader.result.split(',')[1];
-                setFiles(prev => [...prev, {
-                  name: "Pasted Image (" + file.type.split('/')[1] + ")",
-                  base64: base64String,
-                  mimeType: file.type,
-                  id: Date.now() + Math.random() // unique id for key
-                }]);
-              };
-              reader.readAsDataURL(file);
+              processAndAddFile(file, "Pasted Image (" + file.type.split('/')[1] + ")");
             }
           }
         }
@@ -85,7 +165,17 @@ export default function Home() {
         }),
       });
 
-      const data = await res.json();
+      let data;
+      const contentType = res.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        data = await res.json();
+      } else {
+        const textData = await res.text();
+        if (res.status === 413 || textData.includes("Request Entity Too Large")) {
+          throw new Error("The uploaded file(s) are too large. Please upload smaller files or try one at a time.");
+        }
+        throw new Error(`Server returned an error: ${textData.substring(0, 50)}...`);
+      }
 
       if (!res.ok) {
         throw new Error(data.error || "Failed to generate answer");
@@ -120,17 +210,7 @@ export default function Home() {
   const handleFileChange = (e) => {
     const selectedFiles = Array.from(e.target.files);
     selectedFiles.forEach(file => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result.split(',')[1];
-        setFiles(prev => [...prev, {
-          name: file.name,
-          base64: base64String,
-          mimeType: file.type,
-          id: Date.now() + Math.random()
-        }]);
-      };
-      reader.readAsDataURL(file);
+      processAndAddFile(file);
     });
     // Reset file input so the same file(s) can be selected again if needed
     e.target.value = null;

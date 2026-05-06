@@ -55,12 +55,16 @@ Provide your response strictly in Markdown format.`;
     if (filesData && filesData.length > 0) {
       // Add each file as an inline data object
       filesData.forEach(file => {
-        apiContents.push({
-          inlineData: {
-            data: file.base64,
-            mimeType: file.mimeType
-          }
-        });
+        if (file.extractedText) {
+          apiContents.push(`\n--- Extracted Text from ${file.name} ---\n${file.extractedText}\n--- End of ${file.name} ---\n`);
+        } else if (file.base64 && file.mimeType) {
+          apiContents.push({
+            inlineData: {
+              data: file.base64,
+              mimeType: file.mimeType
+            }
+          });
+        }
       });
     }
     
