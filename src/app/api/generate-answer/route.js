@@ -11,9 +11,12 @@ export async function POST(req) {
       );
     }
 
-    // Initialize the Gemini client. It automatically picks up GEMINI_API_KEY from environment variables
-    const ai = new GoogleGenAI({});
-
+    const keysStr = process.env.GEMINI_API_KEY || "";
+    const apiKeys = keysStr.split(",").map(k => k.trim()).filter(k => k);
+    
+    if (apiKeys.length === 0) {
+      return Response.json({ error: "No API keys configured" }, { status: 500 });
+    }
     let systemPrompt = `You are an AI exam assistant designed to provide exam-ready, fully simplified answers for university-level questions.
 Your primary goal is to help students with their assignments and exams.
 Whenever a question is asked, provide a comprehensive but easy-to-understand answer formatted perfectly for an exam scenario.
@@ -71,23 +74,47 @@ Provide your response strictly in Markdown format.`;
     // Add the text prompt at the end
     apiContents.push(fullPrompt);
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: apiContents,
-    });
+    // Shuffle keys to distribute load randomly
+    const shuffledKeys = apiKeys.sort(() => Math.random() - 0.5);
+
+    let response = null;
+    let lastErrorString = "";
+
+    for (const key of shuffledKeys) {
+      try {
+        const ai = new GoogleGenAI({ apiKey: key });
+        response = await ai.models.generateContent({
+          model: "gemini-2.5-flash",
+          contents: apiContents,
+        });
+        // Success, break out of loop
+        break;
+      } catch (error) {
+        const errorString = error?.message || String(error);
+        lastErrorString = errorString;
+        console.warn(`API Key failed. Trying next key. Error: ${errorString.substring(0, 80)}...`);
+        
+        // If it's a quota error, continue to the next key. Otherwise, break and throw immediately
+        if (errorString.includes("429") || errorString.includes("quota") || errorString.includes("RESOURCE_EXHAUSTED")) {
+          continue;
+        } else {
+           throw error; 
+        }
+      }
+    }
+
+    if (!response) {
+       // All keys were exhausted or failed with 429
+       return Response.json(
+         { error: "Google Gemini API Quota Exceeded across all provided keys. Please add more API keys to the environment variables separated by commas. [Last Error: " + lastErrorString + "]" },
+         { status: 429 }
+       );
+    }
 
     return Response.json({ answer: response.text });
   } catch (error) {
     const errorString = error?.message || String(error);
     console.error("API Error:", errorString);
-    
-    // Check if it's a rate limit error
-    if (errorString.includes("429") || errorString.includes("quota") || errorString.includes("RESOURCE_EXHAUSTED")) {
-      return Response.json(
-        { error: "Google Gemini API Quota Exceeded. You have reached the maximum free tier limit of 20 requests per day for gemini-2.5-flash. Please try again tomorrow, or use a different API key. [Debug: " + errorString + "]" },
-        { status: 429 }
-      );
-    }
     
     return Response.json(
       { error: "Failed to generate answer. Please check your API key or try again later. [Debug: " + errorString + "]" },
