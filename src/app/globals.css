@@ -352,3 +352,58 @@ body {
   .results-container h2 { font-size: 1.25rem; }
   .results-container h3 { font-size: 1.1rem; }
 }
+
+/* Markdown Table Styles */
+.results-container table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1.5rem;
+  background: var(--bg-primary);
+  border-radius: 0.5rem;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+}
+
+.results-container th, 
+.results-container td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border-color);
+  border-right: 1px solid var(--border-color);
+  text-align: left;
+}
+
+.results-container th:last-child,
+.results-container td:last-child {
+  border-right: none;
+}
+
+.results-container th {
+  background-color: var(--bg-secondary);
+  font-weight: 600;
+  color: var(--accent-primary);
+}
+
+.results-container tr:last-child td {
+  border-bottom: none;
+}
+
+/* Specific styles for PDF export tables */
+.pdf-markdown-body table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1.5rem;
+  border: 1px solid #cbd5e1;
+}
+
+.pdf-markdown-body th,
+.pdf-markdown-body td {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #cbd5e1;
+  text-align: left;
+}
+
+.pdf-markdown-body th {
+  background-color: #f1f5f9;
+  font-weight: bold;
+  color: #1e3a8a;
+}

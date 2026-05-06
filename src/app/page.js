@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
-
+import remarkGfm from "remark-gfm";
 export default function Home() {
   const [query, setQuery] = useState("");
   const [history, setHistory] = useState([]);
@@ -306,7 +306,7 @@ export default function Home() {
               </button>
             </div>
             <div style={{ padding: '0.5rem', color: 'var(--text-primary)' }}>
-              <ReactMarkdown>{item.answer}</ReactMarkdown>
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{item.answer}</ReactMarkdown>
             </div>
           </div>
         ))}
@@ -407,7 +407,7 @@ export default function Home() {
           <strong style={{ color: '#334155' }}>Question:</strong> {printData.query}
         </div>
         <div className="pdf-markdown-body" style={{ lineHeight: '1.6', fontSize: '14px', color: '#1e293b' }}>
-          <ReactMarkdown>{printData.answer}</ReactMarkdown>
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>{printData.answer}</ReactMarkdown>
         </div>
         <div style={{ marginTop: '50px', paddingTop: '20px', borderTop: '1px solid #e2e8f0', textAlign: 'center', fontSize: '12px', color: '#94a3b8' }}>
           Generated for university exam preparation.
