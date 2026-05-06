@@ -95,8 +95,15 @@ Provide your response strictly in Markdown format.`;
         lastErrorString = errorString;
         console.warn(`API Key failed. Trying next key. Error: ${errorString.substring(0, 80)}...`);
         
-        // If it's a quota error, continue to the next key. Otherwise, break and throw immediately
-        if (errorString.includes("429") || errorString.includes("quota") || errorString.includes("RESOURCE_EXHAUSTED")) {
+        // If it's a quota or server error, continue to the next key. Otherwise, break and throw immediately
+        if (
+          errorString.includes("429") || 
+          errorString.includes("quota") || 
+          errorString.includes("RESOURCE_EXHAUSTED") ||
+          errorString.includes("503") ||
+          errorString.includes("UNAVAILABLE") ||
+          errorString.includes("high demand")
+        ) {
           continue;
         } else {
            throw error; 
@@ -105,17 +112,33 @@ Provide your response strictly in Markdown format.`;
     }
 
     if (!response) {
-       // All keys were exhausted or failed with 429
-       return Response.json(
-         { error: "Google Gemini API Quota Exceeded across all provided keys. Please add more API keys to the environment variables separated by commas. [Last Error: " + lastErrorString + "]" },
-         { status: 429 }
-       );
+       // All keys were exhausted or failed with 429/503
+       const isOverloaded = lastErrorString.includes("503") || lastErrorString.includes("UNAVAILABLE") || lastErrorString.includes("high demand");
+       
+       if (isOverloaded) {
+         return Response.json(
+           { error: "Google's AI servers are currently experiencing high demand and are temporarily overloaded. Please wait a few seconds and try again." },
+           { status: 503 }
+         );
+       } else {
+         return Response.json(
+           { error: "Google Gemini API Quota Exceeded across all provided keys. Please add more API keys to the environment variables separated by commas. [Last Error: " + lastErrorString + "]" },
+           { status: 429 }
+         );
+       }
     }
 
     return Response.json({ answer: response.text });
   } catch (error) {
     const errorString = error?.message || String(error);
     console.error("API Error:", errorString);
+    // Clean up generic 503 errors if they somehow bypass the loop
+    if (errorString.includes("503") || errorString.includes("UNAVAILABLE") || errorString.includes("high demand")) {
+      return Response.json(
+        { error: "Google's AI servers are currently experiencing high demand and are temporarily overloaded. Please wait a few seconds and try again." },
+        { status: 503 }
+      );
+    }
     
     return Response.json(
       { error: "Failed to generate answer. Please check your API key or try again later. [Debug: " + errorString + "]" },
