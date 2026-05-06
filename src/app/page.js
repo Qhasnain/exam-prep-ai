@@ -280,7 +280,7 @@ export default function Home() {
         <h1>AI Exam Helper</h1>
         <p>Your ultimate university study companion. Ask any question and get a simplified, exam-ready answer perfect for assignments and tests.</p>
         <div className="designer-badge">
-          <span className="badge-text">Specially Designed by <strong>Hasnain Qureshi</strong>, LJCCA Student</span>
+          <span className="badge-text">Specially Designed by <strong>Hasnain Qureshi</strong>, BS(CA) Semester 5, LJCCA</span>
         </div>
       </header>
 
@@ -401,7 +401,7 @@ export default function Home() {
       <div id="print-container" style={{ display: 'none', background: 'white', color: 'black', padding: '40px', fontFamily: 'Arial, sans-serif' }}>
         <div style={{ textAlign: 'center', borderBottom: '2px solid #3b82f6', paddingBottom: '20px', marginBottom: '30px' }}>
           <h1 style={{ color: '#1e3a8a', margin: '0 0 10px 0', fontSize: '28px' }}>AI Exam Helper Notes</h1>
-          <p style={{ color: '#64748b', margin: 0, fontSize: '14px' }}>Specially Designed by <strong>Hasnain Qureshi</strong>, LJCCA Student</p>
+          <p style={{ color: '#64748b', margin: 0, fontSize: '14px' }}>Specially Designed by <strong>Hasnain Qureshi</strong>, BS(CA) Semester 5, LJCCA</p>
         </div>
         <div style={{ background: '#f8fafc', padding: '15px', borderRadius: '8px', borderLeft: '4px solid #3b82f6', marginBottom: '30px' }}>
           <strong style={{ color: '#334155' }}>Question:</strong> {printData.query}
