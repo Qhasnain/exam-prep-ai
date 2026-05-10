@@ -80,7 +80,7 @@ export default function Home() {
         try {
           // Dynamically import pdfjs-dist to avoid SSR issues
           const pdfjsLib = await import("pdfjs-dist");
-          pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
+          pdfjsLib.GlobalWorkerOptions.workerSrc = `/pdf.worker.min.mjs`;
           
           const arrayBuffer = reader.result;
           const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) });
