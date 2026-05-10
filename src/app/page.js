@@ -262,7 +262,7 @@ export default function Home() {
                 className="search-button" 
                 style={{ padding: '0.5rem 1rem', fontSize: '0.9rem', background: '#22c55e' }}
               >
-                📥 Download Beautiful PDF
+                📥 Download PDF
               </button>
             </div>
             <div style={{ padding: '0.5rem', color: 'var(--text-primary)' }}>
@@ -383,12 +383,13 @@ export default function Home() {
         
         <div style={{ marginTop: '60px', paddingTop: '20px', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#94a3b8' }}>
           <span>AI Exam Helper &copy; {new Date().getFullYear()}</span>
-          <span>Generated for university exam preparation.</span>
+          <span>With special appreciation to Mentor Parth D Joshi</span>
         </div>
       </div>
 
       <footer className="footer">
         <p>&copy; {new Date().getFullYear()} AI Exam Helper. Built for university students.</p>
+        <p style={{ marginTop: '0.5rem', fontSize: '0.85rem' }}>With special thanks and appreciation to my professor, <strong>Mentor Parth D Joshi</strong>, for his guidance and support.</p>
       </footer>
     </div>
   );
