@@ -398,19 +398,32 @@ export default function Home() {
       </div>
 
       {/* Hidden container specifically styled for PDF export */}
-      <div id="print-container" style={{ display: 'none', background: 'white', color: 'black', padding: '40px', fontFamily: 'Arial, sans-serif' }}>
-        <div style={{ textAlign: 'center', borderBottom: '2px solid #3b82f6', paddingBottom: '20px', marginBottom: '30px' }}>
-          <h1 style={{ color: '#1e3a8a', margin: '0 0 10px 0', fontSize: '28px' }}>AI Exam Helper Notes</h1>
-          <p style={{ color: '#64748b', margin: 0, fontSize: '14px' }}>Specially Designed by <strong>Hasnain Qureshi</strong>, BS(CA) Semester 5, LJCCA</p>
+      <div id="print-container" style={{ display: 'none', background: 'white', color: 'black', padding: '40px 50px', fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif' }}>
+        <div style={{ textAlign: 'center', marginBottom: '30px', paddingBottom: '20px', borderBottom: '2px solid #e2e8f0' }}>
+          <h1 style={{ color: '#1e3a8a', margin: '0 0 8px 0', fontSize: '34px', fontWeight: '800', letterSpacing: '-0.5px' }}>Software Engineering</h1>
+          <h2 style={{ color: '#3b82f6', margin: '0 0 12px 0', fontSize: '18px', fontWeight: '600', letterSpacing: '0.5px', textTransform: 'uppercase' }}>Exam-Ready Study Notes</h2>
+          <p style={{ color: '#64748b', margin: 0, fontSize: '13px' }}>Based on: Pressman - Software Engineering: A Practitioner's Approach, 7th Ed.</p>
+          <p style={{ color: '#94a3b8', margin: '5px 0 0 0', fontSize: '12px' }}>Specially Designed by <strong>Hasnain Qureshi</strong>, BS(CA) Semester 5, LJCCA</p>
         </div>
-        <div style={{ background: '#f8fafc', padding: '15px', borderRadius: '8px', borderLeft: '4px solid #3b82f6', marginBottom: '30px' }}>
-          <strong style={{ color: '#334155' }}>Question:</strong> {printData.query}
+        
+        <div style={{ textAlign: 'center', color: '#2563eb', fontWeight: 'bold', fontSize: '14px', marginBottom: '25px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+          <span>★</span>
+          <span>Each section is exam-ready for 5–10 mark questions</span>
+          <span>★</span>
         </div>
-        <div className="pdf-markdown-body" style={{ lineHeight: '1.6', fontSize: '14px', color: '#1e293b' }}>
+
+        <div style={{ background: '#1e3a8a', color: 'white', padding: '15px 20px', fontWeight: 'bold', fontSize: '16px', marginBottom: '25px', borderRadius: '4px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+          Q. {printData.query}
+        </div>
+        
+        {/* The generated response content goes here */}
+        <div className="pdf-markdown-body" style={{ lineHeight: '1.7', fontSize: '14px', color: '#334155' }}>
           <ReactMarkdown remarkPlugins={[remarkGfm]}>{printData.answer}</ReactMarkdown>
         </div>
-        <div style={{ marginTop: '50px', paddingTop: '20px', borderTop: '1px solid #e2e8f0', textAlign: 'center', fontSize: '12px', color: '#94a3b8' }}>
-          Generated for university exam preparation.
+        
+        <div style={{ marginTop: '60px', paddingTop: '20px', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#94a3b8' }}>
+          <span>AI Exam Helper &copy; {new Date().getFullYear()}</span>
+          <span>Generated for university exam preparation.</span>
         </div>
       </div>
 
