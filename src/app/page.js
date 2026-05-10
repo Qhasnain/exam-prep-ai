@@ -80,7 +80,7 @@ export default function Home() {
         try {
           // Dynamically import pdfjs-dist to avoid SSR issues
           const pdfjsLib = await import("pdfjs-dist");
-          pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+          pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
           
           const arrayBuffer = reader.result;
           const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) });
@@ -104,7 +104,7 @@ export default function Home() {
           }]);
         } catch (error) {
           console.error("Error parsing PDF locally:", error);
-          alert("Could not extract text from PDF. It might be corrupted or protected.");
+          alert(`Could not extract text from PDF. Error: ${error.message || "Please try a different file."}`);
         }
       };
       reader.readAsArrayBuffer(file);
