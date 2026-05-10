@@ -34,47 +34,7 @@ export default function Home() {
   };
 
   const processAndAddFile = (file, customName) => {
-    if (file.type.startsWith("image/")) {
-      const img = document.createElement("img");
-      const url = URL.createObjectURL(file);
-      
-      img.onload = () => {
-        URL.revokeObjectURL(url);
-        const canvas = document.createElement("canvas");
-        const MAX_WIDTH = 1200;
-        const MAX_HEIGHT = 1200;
-        let width = img.width;
-        let height = img.height;
-
-        if (width > height) {
-          if (width > MAX_WIDTH) {
-            height *= MAX_WIDTH / width;
-            width = MAX_WIDTH;
-          }
-        } else {
-          if (height > MAX_HEIGHT) {
-            width *= MAX_HEIGHT / height;
-            height = MAX_HEIGHT;
-          }
-        }
-        
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, width, height);
-        
-        const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
-        const base64String = dataUrl.split(",")[1];
-        
-        setFiles(prev => [...prev, {
-          name: customName || file.name,
-          base64: base64String,
-          mimeType: "image/jpeg",
-          id: Date.now() + Math.random()
-        }]);
-      };
-      img.src = url;
-    } else if (file.type === "application/pdf") {
+    if (file.type === "application/pdf") {
       const reader = new FileReader();
       reader.onloadend = async () => {
         try {
